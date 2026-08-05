@@ -28,7 +28,7 @@ router.get("/tasks/:id", (req, res) => {
 
 const users = await fetchSampleUsers();
 router.get("/users", (req, res) => {
-    res.status(200).json({ users });
+    res.status(200).json(users);
 }); 
 
 export default router;
