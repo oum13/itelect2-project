@@ -83,3 +83,13 @@ Delete tasks with existing id returns 200.
 
 ![](screenshots/GT8-delete-task-404.png)
 Delete on the same id returns 404.
+
+---
+
+#### pgadmin tables
+
+![](screenshots/pgadmin-tasks-table.png)
+Screenshot of tasks table on pgadmin.
+
+![](screenshots/pgadmin-users-table.png)
+Screenshot of users table on pgadmin.
