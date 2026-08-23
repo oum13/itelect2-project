@@ -1,71 +1,52 @@
 import express from "express";
-import { tasks, validateTask, mergeTaskUpdate } from "../src/utils.js";
-import {fetchSampleUsers} from "../src/api.js";
+import db from "../models/index.cjs";
 
+const { Task, User } = db;
 const router = express.Router();
 
 router.get("/", (req, res) => {
 res.json({ message: "Hello from the router!" });
 });
 
-router.get("/tasks", (req, res) => {
-    res.status(200).json({ tasks });
+router.get("/tasks", async (req, res) => {
+    const tasks = await Task.findAll({ include: User, order: [["id", "ASC"]] });
+    res.json(tasks);
 });
 
-router.get("/tasks/:id", (req, res) => {
-    console.log(req.params.id); // URL segment
-    console.log(req.query.sort); // ?sort=asc
-    console.log(req.body); // JSON payload
-
-    for (let i = 0; i < tasks.length; i++) {
-        if (req.params.id === tasks[i].id.toString()) {
-            res.status(200).json({ task: tasks[i] });
-            return;
-        }
+router.get("/tasks/:id", async (req, res) => {
+    const task = await Task.findByPk(req.params.id, { include: User });
+    if (!task) {
+    return res.status(404).json({ error: "Task not found" });
     }
-    res.status(404).json({ message: "Task not found" });
+    res.json(task);
 });
 
-const users = await fetchSampleUsers();
-router.get("/users", (req, res) => {
-    res.status(200).json(users);
-}); 
-
-let nextId = 4;
-
-router.post("/tasks", (req, res, next) => {
-if (!validateTask(req.body)) {
-const err = new Error("title and dueDate required");
-err.status = 400;
-return next(err); 
-}
-const task = { id: nextId++, ...req.body, completed: false };
-tasks.push(task);
-res.status(201).json(task);
+router.get("/users", async (req, res) => {
+    const users = await User.findAll({ order: [["id", "ASC"]] });
+    res.json(users);
 });
 
-router.put("/tasks/:id", (req, res, next) => {
-const id = Number(req.params.id);
-const index = tasks.findIndex((t) => t.id === id);
-if (index === -1) {
-const err = new Error("Task not found");
-err.status = 404;
-return next(err);
-}
-tasks[index] = mergeTaskUpdate(tasks[index], req.body);
-res.status(200).json(tasks[index]);
+router.post("/tasks", async (req, res) => {
+    const task = await Task.create(req.body);
+    res.status(201).json(task);
 });
 
-router.delete("/tasks/:id", (req, res, next) => {
-const id = Number(req.params.id);
-const index = tasks.findIndex((t) => t.id === id);
-if (index === -1) {
-const err = new Error("Task not found");
-err.status = 404;
-return next(err);
-}
-const [removed] = tasks.splice(index, 1);
-res.status(200).json({ message: "Deleted", task: removed });
+router.put("/tasks/:id", async (req, res) => {
+    const task = await Task.findByPk(req.params.id);
+    if (!task) {
+    return res.status(404).json({ error: "Task not found" });
+    }
+    await task.update(req.body);
+    res.json(task);
+});
+
+router.delete("/tasks/:id", async (req, res) => {
+    const task = await Task.findByPk(req.params.id);
+    if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+    }
+    await task.destroy();
+res.json({ message: "Deleted", task });
 });
 
 export default router;
